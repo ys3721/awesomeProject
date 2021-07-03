@@ -10,8 +10,10 @@ import (
 )
 
 const (
-	youNeedSleep = "中午不锻炼的话就赶紧睡觉吧！"
-	urlStr       = "https://open.feishu.cn/open-apis/bot/v2/hook/bbedb9f8-8061-49b4-84e3-f8d8b89e5892"
+	youNeedSleep    = "中午不锻炼的话就赶紧睡觉吧！"
+	urlStr          = "https://open.feishu.cn/open-apis/bot/v2/hook/bbedb9f8-8061-49b4-84e3-f8d8b89e5892"
+	mustSleepOrDead = "半夜失眠，受不了，早点睡吧"
+	punchin         = "Do not forgot daka!"
 )
 
 type MsgInfo struct {
@@ -39,10 +41,9 @@ func main() {
 	log.SetPrefix("daily notice service: ")
 
 	c := cron.New()
-	c.AddFunc("0 30 * * * *", sendSleepNotice)
-	c.AddFunc("0 0 23 * * *", sendSleepNotice)
-	c.AddFunc("0 57 9 * * *", sendPunchInNotice)
-	//c.AddFunc("@every 1s", sendSleepNotice)
+	c.AddFunc("*/5 * * * * ?", sendNightSleepNotice)
+	c.AddFunc("*/5 * * * * ?", sendPunchInNotice)
+	c.AddFunc("*/5 * * * * ?", sendMidSleepNotice)
 
 	c.Start()
 	fmt.Println("cron start ok..")
@@ -50,20 +51,25 @@ func main() {
 }
 
 func sendPunchInNotice() {
-	fmt.Println("Begin send punch in notice ..")
-	by, err := buildPostDataStr("打卡打打卡打卡打卡打卡打卡打卡打卡打卡打卡打卡打卡打卡打卡打卡打卡打卡卡")
-	if err != nil {
-		return
-	}
-	http.Post(urlStr, "application/json", bytes.NewBuffer(by))
+	fmt.Println("Begin send punch in notice!")
+	sendTextNotice(punchin)
 }
 
-func sendSleepNotice() {
+func sendMidSleepNotice() {
 	fmt.Println("Begin send sleep notice!")
-	by, err := buildPostDataStr(youNeedSleep)
+	sendTextNotice(youNeedSleep)
+}
+
+func sendNightSleepNotice() {
+	log.Printf("Begin send night notice!")
+	sendTextNotice(mustSleepOrDead)
+}
+
+func sendTextNotice(content string) {
+	pd, err := buildPostDataStr(content)
 	if err != nil {
+		log.Printf("Send text notic err %v !", err)
 		return
 	}
-	ioB := bytes.NewBuffer(by)
-	http.Post(urlStr, "application/json", ioB)
+	http.Post(urlStr, "application/json", bytes.NewBuffer(pd))
 }
