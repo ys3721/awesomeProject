@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -11,14 +12,14 @@ import (
 var templates = template.Must(template.ParseFiles("validate.html"))
 var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
 
-type CheckLog struct{
+type CheckLog struct {
 	Title string
-	Body []byte
+	Body  []byte
 }
 
 func main() {
 	http.HandleFunc("/validate/", makeHandler(checkHandler))
-	log.Fatal(http.ListenAndServe(":8080",nil))
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
@@ -37,13 +38,14 @@ func checkHandler(w http.ResponseWriter, r *http.Request, rootPath string) {
 		return
 	}
 	//do check process .
-	beginValidate()
+	bytes, _ := BeginValidate()
+	fmt.Println(bytes)
 	renderTemplate(w, "view", p)
 }
 
 func renderTemplate(w http.ResponseWriter, title string, log *CheckLog) {
-	t, err := template.ParseFiles(title+".log")
-	if err !=  nil {
+	t, err := template.ParseFiles(title + ".log")
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -64,7 +66,7 @@ func loadLog(fileName string) (*CheckLog, error) {
 	return &cl, nil
 }
 
-func (c *CheckLog)saveLog(fileName string) error {
+func (c *CheckLog) saveLog(fileName string) error {
 	fileName += ".log"
 	err := ioutil.WriteFile(fileName, c.Body, 600)
 	return err

@@ -8,23 +8,23 @@ import (
 
 type DateValier struct {
 	OperatorPath string
-	Result []byte
+	Result       []byte
 }
 
-func beginValidate() ([]byte, error) {
+func BeginValidate() ([]byte, error) {
 	ver := NewDefaultValier()
 	ver.vali()
 	return ver.Result, nil
 }
 
 func (ver *DateValier) vali() {
-	err := os.RemoveAll(ver.OperatorPath+"*")
+	err := os.RemoveAll(ver.OperatorPath + "*")
 	if err != nil {
 		fmt.Println("clear folder error!")
 		os.Exit(1)
 	}
 	osExecClone(ver.OperatorPath, "git@git.hortorgames.com:lihao/cultivation_makedata.git")
-	cmd := exec.Command("hortor-cli","config", "./config-go.js")
+	cmd := exec.Command("hortor-cli", "config", "./config-go.js")
 	cmd.Dir = ver.OperatorPath
 	if ver.Result, err = cmd.CombinedOutput(); err != nil {
 		fmt.Println(err)
@@ -45,9 +45,9 @@ func main0() {
 	var err error
 
 	//建筑筑
-	exec.Command("rm","-rf", "/data2/validata/dataSpace").CombinedOutput()
+	exec.Command("rm", "-rf", "/data2/validata/dataSpace").CombinedOutput()
 	osExecClone("/data2/validata/dataSpace", "git@git.hortorgames.com:lihao/cultivation_makedata.git")
-	cmd := exec.Command("hortor-cli","config", "/data2/validata/dataSpace/config-go.js")
+	cmd := exec.Command("hortor-cli", "config", "/data2/validata/dataSpace/config-go.js")
 	cmd.Dir = "/data2/validata/dataSpace/"
 	if result, err = cmd.CombinedOutput(); err != nil {
 		fmt.Println(err)
