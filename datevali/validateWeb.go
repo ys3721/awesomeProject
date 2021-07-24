@@ -10,7 +10,7 @@ import (
 )
 
 var templates = template.Must(template.ParseFiles("validate.html"))
-var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
+var validPath = regexp.MustCompile("^/(edit|save|view|validate|index)/([a-zA-Z0-9]+)$")
 
 type CheckLog struct {
 	Title string
@@ -18,8 +18,20 @@ type CheckLog struct {
 }
 
 func main() {
-	http.HandleFunc("/validate/", makeHandler(checkHandler))
+	//http.HandleFunc("/validate/", makeHandler(checkHandler))
+	http.HandleFunc("/validate/", makeHandler(dispatcherHandler))
 	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func dispatcherHandler(w http.ResponseWriter, r *http.Request, action string) {
+	switch action {
+	case "index":
+		renderTemplate(w, action, nil)
+	case "golang":
+		checkHandler(w, r, action)
+	default:
+		http.NotFound(w, r)
+	}
 }
 
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
@@ -32,24 +44,28 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 	}
 }
 
-func checkHandler(w http.ResponseWriter, r *http.Request, rootPath string) {
-	p, err := loadLog(rootPath)
-	if err != nil {
-		return
-	}
+func checkHandler(w http.ResponseWriter, r *http.Request, action string) {
+	rootPath := action
 	//do check process .
 	bytes, _ := BeginValidate()
-	fmt.Println(bytes)
-	renderTemplate(w, "view", p)
+	fmt.Printf("%s", bytes)
+	p, err := loadLog(rootPath)
+	if err != nil {
+		p = &CheckLog{Title: rootPath, Body: bytes}
+	} else {
+		p = &CheckLog{Title: rootPath, Body: bytes}
+	}
+	p.saveLog(rootPath)
+	renderTemplate(w, "validate", p)
 }
 
 func renderTemplate(w http.ResponseWriter, title string, log *CheckLog) {
-	t, err := template.ParseFiles(title + ".log")
+	t, err := template.ParseFiles(title + ".html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = t.ExecuteTemplate(w, title+".log", log)
+	err = t.ExecuteTemplate(w, title+".html", log)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -68,6 +84,6 @@ func loadLog(fileName string) (*CheckLog, error) {
 
 func (c *CheckLog) saveLog(fileName string) error {
 	fileName += ".log"
-	err := ioutil.WriteFile(fileName, c.Body, 600)
+	err := ioutil.WriteFile(fileName, c.Body, 755)
 	return err
 }

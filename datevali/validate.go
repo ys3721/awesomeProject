@@ -18,16 +18,18 @@ func BeginValidate() ([]byte, error) {
 }
 
 func (ver *DateValier) vali() {
-	err := os.RemoveAll(ver.OperatorPath + "*")
-	if err != nil {
-		fmt.Println("clear folder error!")
-		os.Exit(1)
+	pe, _ := PathExists(ver.OperatorPath)
+	if pe {
+		exec.Command("rm", "-rf", ver.OperatorPath).CombinedOutput()
+		osExecClone(ver.OperatorPath, "git@git.hortorgames.com:lihao/cultivation_makedata.git")
+	} else {
+		osExecClone(ver.OperatorPath, "git@git.hortorgames.com:lihao/cultivation_makedata.git")
 	}
-	osExecClone(ver.OperatorPath, "git@git.hortorgames.com:lihao/cultivation_makedata.git")
 	cmd := exec.Command("hortor-cli", "config", "./config-go.js")
 	cmd.Dir = ver.OperatorPath
+	var err error
 	if ver.Result, err = cmd.CombinedOutput(); err != nil {
-		fmt.Println(err)
+		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 }
@@ -63,4 +65,22 @@ func osExecClone(workspace, url string) error {
 	out, _ := cmd.CombinedOutput()
 	fmt.Printf("%s", out)
 	return nil
+}
+
+func osExecPull(workspace string) error {
+	cmd := exec.Command("git", "pull", workspace)
+	out, _ := cmd.CombinedOutput()
+	fmt.Printf("%s", out)
+	return nil
+}
+
+func PathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }
